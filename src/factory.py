@@ -2,6 +2,8 @@ from src.entities.item import Item
 from src.entities.user import User
 from src.stock import Stock
 from src.usersManager import UsersManager
+from src.database import SQLDatabase
+from src.constants import DATABASE_NAME
 
 class Factory:
     @staticmethod
@@ -23,3 +25,7 @@ class Factory:
     @staticmethod
     def getUsersManager() -> UsersManager:
         return UsersManager()
+    
+    @staticmethod
+    def getDatabase() -> SQLDatabase:
+        return SQLDatabase(DATABASE_NAME)

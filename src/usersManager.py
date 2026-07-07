@@ -15,3 +15,13 @@ class UsersManager:
 
     def getUsers(self) -> list[User]:
         return self.users
+    
+    def getUser(self, id: int) -> User | None:
+        for user in self.users:
+            if user.id == id:
+                return user
+        return None
+    
+    @property
+    def hasUsers(self) -> bool:
+        return len(self.users) > 0

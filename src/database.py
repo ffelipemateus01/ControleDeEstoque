@@ -5,6 +5,7 @@ class SQLDatabase:
     def __init__(self, dbName: str):
         self.connection = sqlite3.connect(dbName)
         self.cursor = self.connection.cursor()
+        self.cursor.execute('PRAGMA foreign_keys = ON')
         self.cursor.executescript('''
             CREATE TABLE IF NOT EXISTS items (
                 code INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -22,6 +23,7 @@ class SQLDatabase:
                 itemCode INTEGER NOT NULL, 
                 quantity INTEGER NOT NULL,
                 userId INTEGER NOT NULL,
+                date TEXT NOT NULL,
                 FOREIGN KEY(itemCode) REFERENCES items(code),
                 FOREIGN KEY(userId) REFERENCES users(id));
             ''')
@@ -54,20 +56,20 @@ class SQLDatabase:
         except sqlite3.Error:
             raise UserException('Houve um erro ao tentar listar os usuários.')
         
-    def createItem(self, name: str, initialQuantity: int, userId: int) -> int:
+    def createItem(self, name: str, initialQuantity: int, userId: int, date: str) -> int:
         try:
             (code, ) = self.cursor.execute('''
                 INSERT INTO items (name)
                 VALUES (?)
                 RETURNING code
             ''', (name,)).fetchone()
-            self.updateItemInStock('in', code, initialQuantity, userId)
+            self.updateItemInStock('in', code, initialQuantity, userId, date)
             return code
         except sqlite3.Error:
             self.connection.rollback()
             raise ItemException('Houve um erro ao tentar inserir um item no estoque.')
         
-    def updateItemInStock(self, type: str, code: int, quantity: int, userId: int) -> int:
+    def updateItemInStock(self, type: str, code: int, quantity: int, userId: int, date: str) -> int:
         try:
             if type == 'in':
                 (newQuantity,) = self.cursor.execute('''
@@ -85,7 +87,7 @@ class SQLDatabase:
                 if result is None:
                     raise ItemException('Item não encontrado no estoque.')
                 (newQuantity,) = result
-            self.newTransaction(type, code, quantity, userId)
+            self.newTransaction(type, code, quantity, userId, date)
             self.connection.commit()
             return newQuantity
         except sqlite3.IntegrityError:
@@ -117,16 +119,16 @@ class SQLDatabase:
         except sqlite3.Error:
             raise StockException('Houve um erro ao tentar listar os itens no estoque.')
         
-    def newTransaction(self, type: str, itemCode: int, quantity: int, userId: int):
+    def newTransaction(self, type: str, itemCode: int, quantity: int, userId: int, date: str):
         self.cursor.execute('''
-            INSERT INTO transactions (type, itemCode, quantity, userId)
-            VALUES (?, ?, ?, ?)''', (type, itemCode, quantity, userId))
+            INSERT INTO transactions (type, itemCode, quantity, date, userId)
+            VALUES (?, ?, ?, ?, ?)''', (type, itemCode, quantity, date, userId))
         
     def getTransactions(self) -> list[dict]:
         try:
             transactions = []
             results = self.cursor.execute('''
-                SELECT t.id, t.type, i.code, i.name, t.quantity, u.name, u.id FROM transactions AS t
+                SELECT t.id, t.type, i.code, i.name, t.quantity, u.name, u.id, t.date FROM transactions AS t
                 INNER JOIN items AS i
                 ON i.code = t.itemCode 
                 INNER JOIN users AS u
@@ -142,6 +144,7 @@ class SQLDatabase:
                 transaction['quantity'] = r[4]
                 transaction['userName'] = r[5]
                 transaction['userId'] = r[6]
+                transaction['date'] = r[7]
                 transactions.append(transaction)
             return transactions
         except sqlite3.Error:

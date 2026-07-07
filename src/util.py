@@ -22,6 +22,7 @@ def normalizeTransactions(transactions: list[dict]) -> list[Transaction]:
                                                   quantity=transaction['quantity'], 
                                                   userName=transaction['userName'], 
                                                   itemCode=transaction['itemCode'], 
+                                                  date=transaction['date'],
                                                   userId=transaction['userId'], 
                                                   id=transaction['id']))
     return normalizedTransactions

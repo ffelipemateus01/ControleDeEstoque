@@ -6,6 +6,7 @@ class Transaction:
     itemName: str
     quantity: int
     userName: str
+    date: str
     itemCode: int | None
     userId: int | None
     id: int | None

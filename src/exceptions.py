@@ -1,10 +1,9 @@
-from sqlite3 import Error
 
-class StockException(Error):
+class StockException(Exception):
     pass
 
-class UserException(Error):
+class UserException(Exception):
     pass
 
-class ItemException(Error):
+class ItemException(Exception):
     pass
