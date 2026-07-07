@@ -52,6 +52,10 @@ class StockApp:
             print(f'{user.id:04d}     | {user.name}')
 
     def showRecentMoves(self):
+        transactions = self._stock.getTransactions()
+        if not transactions:
+            print('Nenhuma movimentação registrada.')
+            return
         print(f'id     | Data     | Tipo     | Item     | Quantidade     | Usuário')
         for t in self._stock.getTransactions():
             print(f'{t.id:04d}     | {t.date}    | {self.translateType(t.type)}     | {t.itemName}     | {t.quantity}     | {t.userName}')
@@ -82,9 +86,9 @@ class StockApp:
         if not self._usersManager.hasUsers:
             print('Nenhum usuário cadastrado no sistema.')
             return
-        name = self.readStr('Digite o nome do item: ')
-        initialQuantity = self.readInt('Digite a quantidade inicial inserida: ')
-        date = datetime.now().strftime('%d/%m/%Y')
+        name = self.readNewItemName()
+        initialQuantity = self.readPositiveInt('Digite a quantidade inicial inserida: ')
+        date = self.readDate('Data de entrada (dd/mm/aaaa, Enter = hoje): ')
         userId = self.readUserId()
         item = Factory.getItem(name, initialQuantity)
         self._stock.insertItem(item, userId, date)
@@ -103,8 +107,8 @@ class StockApp:
             if self._stock.getItem(code) is not None:
                 break
             print('Item não encontrado no sistema. Digite um código válido.')
-        quantity = self.readInt('Digite a quantidade: ')
-        date = datetime.now().strftime('%d/%m/%Y')
+        quantity = self.readPositiveInt('Digite a quantidade: ')
+        date = self.readDate('Data de entrada (dd/mm/aaaa, Enter = hoje): ')
         userId = self.readUserId()
         self._stock.updateItem('in', code, quantity, userId, date)
         print('Entrada registrada com sucesso!')
@@ -117,15 +121,19 @@ class StockApp:
             print('Nenhum item cadastrado no estoque.')
             return
         self.showItems()
-        code = self.readInt('Digite o código do item: ')
-        quantity = self.readInt('Digite a quantidade: ')
+        while True:
+            code = self.readInt('Digite o código do item: ')
+            if self._stock.getItem(code) is not None:
+                break
+            print('Item não encontrado no sistema. Digite um código válido.')
+        quantity = self.readPositiveInt('Digite a quantidade: ')
         date = datetime.now().strftime('%d/%m/%Y')
         userId = self.readUserId()
         self._stock.updateItem('out', code, quantity, userId, date)
         print('Saída registrada com sucesso!')
     
     def showSignUp(self):
-        name = self.readStr('Digite o nome do usuário: ')
+        name = self.readNewUserName()
         self._usersManager.createUser(name)
         print('Usuário cadastrado com sucesso!')
 
@@ -135,6 +143,13 @@ class StockApp:
         else:
             return 'Saída'
         
+    def readPositiveInt(self, message: str) -> int:
+        while True:
+            value = self.readInt(message)
+            if value > 0:
+                return value
+            print('O valor digitado deve ser maior que zero.')
+
     def readInt(self, message: str) -> int:
         while True:
             value = input(message).strip()
@@ -142,6 +157,20 @@ class StockApp:
                 return int(value)
             except ValueError:
                 print('Valor inválido. Digite apenas números inteiros.')
+
+    def readNewItemName(self) -> str:
+        while True:
+            name = self.readStr('Digite o nome do item: ')
+            if self._stock.getItemByName(name) is None:
+                return name
+            print(f'Já existe um item chamado "{name}". Escolha outro nome.')
+
+    def readNewUserName(self) -> str:
+        while True:
+            name = self.readStr('Digite o nome do usuário: ')
+            if self._usersManager.getUserByName(name) is None:
+                return name
+            print(f'Já existe um item chamado "{name}". Escolha outro nome.')
 
     def readStr(self, message: str) -> str:
         while True:
@@ -157,3 +186,14 @@ class StockApp:
             if self._usersManager.getUser(userId) is not None:
                 return userId
             print('Usuário não encontrado! Informe um id da lista acima.')
+
+    def readDate(self, message: str) -> str:
+        while True:
+            value = input(message).strip()
+            if value == '':
+                return datetime.now().strftime('%d/%m/%Y')
+            try:
+                datetime.strptime(value, '%d/%m/%Y')
+                return value
+            except ValueError:
+                print('Data inválida! Use o formato dd/mm/aaaa.')

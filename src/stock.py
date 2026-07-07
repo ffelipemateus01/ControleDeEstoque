@@ -16,6 +16,12 @@ class Stock:
                 return item
         return None
 
+    def getItemByName(self, name: str) -> Item | None:
+        for item in self.items:
+            if item.name.lower() == name.lower():
+                return item
+        return None
+    
     def insertItem(self, item: Item, userId: int, date: str):
         if item.quantity <= 0:
             raise ItemException('A quantidade inicial deve ser maior que zero.')

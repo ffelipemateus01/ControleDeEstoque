@@ -22,6 +22,12 @@ class UsersManager:
                 return user
         return None
     
+    def getUserByName(self, name: str) -> User | None:
+        for user in self.users:
+            if user.name.lower() == name.lower():
+                return user
+        return None
+    
     @property
     def hasUsers(self) -> bool:
         return len(self.users) > 0

@@ -9,10 +9,10 @@ class SQLDatabase:
         self.cursor.executescript('''
             CREATE TABLE IF NOT EXISTS items (
                 code INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL);
+                name TEXT NOT NULL UNIQUE COLLATE NOCASE);
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL);
+                name TEXT NOT NULL UNIQUE COLLATE NOCASE);
             CREATE TABLE IF NOT EXISTS stock(
                 itemCode INTEGER NOT NULL UNIQUE,
                 quantity INTEGER NOT NULL CHECK(quantity >= 0),
