@@ -1,3 +1,4 @@
+#exceções personalizadas
 
 class StockException(Exception):
     pass

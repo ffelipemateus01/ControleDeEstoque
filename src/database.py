@@ -2,10 +2,13 @@ import sqlite3
 from src.exceptions import ItemException, StockException, UserException
 
 class SQLDatabase:
+    '''Gerenciador do banco de dados'''
     def __init__(self, dbName: str):
         self.connection = sqlite3.connect(dbName)
         self.cursor = self.connection.cursor()
+        #habilita chaves estrangeiras
         self.cursor.execute('PRAGMA foreign_keys = ON')
+        #criação das tabelas se não existir
         self.cursor.executescript('''
             CREATE TABLE IF NOT EXISTS items (
                 code INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -30,6 +33,7 @@ class SQLDatabase:
         self.connection.commit()
 
     def createUser(self, name: str) -> int:
+        '''Cadastra um novo usuário no sistema'''
         try:
             (userId, ) = self.cursor.execute('''
                 INSERT INTO users (name)
@@ -42,6 +46,7 @@ class SQLDatabase:
             raise UserException('Houve um erro ao tentar inserir um usuário.')
 
     def getUsers(self) -> list[dict]:
+        '''Retorna os usuários cadastrados no sistema'''
         try:
             users = []
             results = self.cursor.execute('''
@@ -57,6 +62,7 @@ class SQLDatabase:
             raise UserException('Houve um erro ao tentar listar os usuários.')
         
     def createItem(self, name: str, initialQuantity: int, userId: int, date: str) -> int:
+        '''Cadastra um novo item no estoque'''
         try:
             (code, ) = self.cursor.execute('''
                 INSERT INTO items (name)
@@ -70,8 +76,10 @@ class SQLDatabase:
             raise ItemException('Houve um erro ao tentar inserir um item no estoque.')
         
     def updateItemInStock(self, type: str, code: int, quantity: int, userId: int, date: str) -> int:
+        '''Movimenta um item no estoque'''
         try:
             if type == 'in':
+                #entrada de item existente no estoque
                 (newQuantity,) = self.cursor.execute('''
                     INSERT INTO stock (itemCode, quantity)
                     VALUES (?, ?)
@@ -79,6 +87,7 @@ class SQLDatabase:
                     SET quantity=quantity + excluded.quantity
                     RETURNING quantity''', (code, quantity)).fetchone()
             else:
+                #saída de item existente no estoque
                 result = self.cursor.execute('''
                     UPDATE stock
                     SET quantity=quantity - ?
@@ -91,6 +100,7 @@ class SQLDatabase:
             self.connection.commit()
             return newQuantity
         except sqlite3.IntegrityError:
+            #usuário inseriu uma quantidade maior que a existente no estoque
             self.connection.rollback()
             raise ItemException('Quantidade em estoque insuficiente para esta saída.')
         except ItemException:
@@ -101,6 +111,7 @@ class SQLDatabase:
             raise ItemException('Houve um erro ao tentar movimentar um item.')
         
     def getItems(self) -> list[dict]:
+        '''Retorna os itens no estoque'''
         try:
             items = []
             results = self.cursor.execute('''
@@ -120,11 +131,13 @@ class SQLDatabase:
             raise StockException('Houve um erro ao tentar listar os itens no estoque.')
         
     def newTransaction(self, type: str, itemCode: int, quantity: int, userId: int, date: str):
+        '''Cadastra uma nova movimentação no estoque'''
         self.cursor.execute('''
             INSERT INTO transactions (type, itemCode, quantity, date, userId)
             VALUES (?, ?, ?, ?, ?)''', (type, itemCode, quantity, date, userId))
         
     def getTransactions(self) -> list[dict]:
+        '''Retorna a lista de movimentações recentes no estoque'''
         try:
             transactions = []
             results = self.cursor.execute('''

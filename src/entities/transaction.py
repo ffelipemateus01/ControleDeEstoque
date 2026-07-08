@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Transaction:
+    '''Entidade de movimentação de um item'''
     type: str
     itemName: str
     quantity: int
